@@ -1,14 +1,7 @@
-package com.example.searcher;
+package com.searcher.util;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.thymeleaf.ThymeleafAutoConfiguration;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -18,26 +11,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-@SpringBootApplication(exclude = ThymeleafAutoConfiguration.class)
-public class SearcherApplication {
+public class ZipUtils {
 
-    public static final int TAR_OFFSET = 0x101;
-
-    public static void main(String[] args) {
-
-        Resource resource = new ClassPathResource("sb.tar");
-        try {
-            InputStream resourceInputStream = resource.getInputStream();
-            unpack(resourceInputStream.readAllBytes());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-//        SpringApplication.run(SearcherApplication.class, args);
-    }
-
-
-    static boolean unpack(byte[] bytes) throws Exception {
+    private static final int TAR_OFFSET = 0x101;
+    public static boolean unpack(byte[] bytes) throws Exception {
         if (bytes == null || bytes.length == 0) {
             return false;
         }
@@ -53,12 +30,12 @@ public class SearcherApplication {
         return true;
     }
 
-    static boolean checkZip(byte[] bytes) {
+    private static boolean checkZip(byte[] bytes) {
         return bytes.length >= 4 && bytes[0] == 0x50 && bytes[1] == 0x4b && bytes[2] == 0x03 && bytes[3] == 0x04;
     }
 
 
-    static boolean checkTar(byte[] bytes) {
+    private static boolean checkTar(byte[] bytes) {
 
         return bytes.length >= TAR_OFFSET + 8 && bytes[TAR_OFFSET] == 0x75 &&
                 bytes[TAR_OFFSET + 1] == 0x73 &&
@@ -72,7 +49,7 @@ public class SearcherApplication {
     }
 
 
-    static void unzip(InputStream is) throws Exception {
+    private static void unzip(InputStream is) throws Exception {
         ZipInputStream zis = new ZipInputStream(is);
         ZipEntry zipEntry = zis.getNextEntry();
         while (zipEntry != null) {
@@ -107,7 +84,6 @@ public class SearcherApplication {
 
     private static AtomicInteger counter = new AtomicInteger(0);
 
-
     private static void parseBytes(String filename, byte[] bytes) {
         Optional.of(bytes)
                 .map(String::new)
@@ -117,17 +93,5 @@ public class SearcherApplication {
                 .parallel()
                 .filter(p -> p.contains("password"))
                 .forEach(s -> System.out.println(counter.incrementAndGet() + ") " + filename + ":\n" + s + "\n"));
-    }
-
-
-    @RestController
-    static class TweetController {
-        @GetMapping
-        public Mono<String> getAllTweets() {
-
-            return Mono.just("test");
-        }
-
-
     }
 }
